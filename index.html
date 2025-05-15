@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>查找替换小工具</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    .instruction {
+      background-color: #fff8c6;
+      border: 1px solid #f1c40f;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    textarea, input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      margin-right: 10px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="instruction">
+    <strong>使用说明：</strong><br>
+    - 本工具用于批量查找并替换文本内容。<br>
+    - 查找多个字符时，请用空格分隔（例如：abc 123 @@）。<br>
+    - 默认替换内容为一个空格。<br>
+    - 点击 “一键替换符号” 可将 <code>+ / - . , ~ ）</code> 这些符号统一替换为空格，同时清理生肖间符号与号码前后干扰字符。
+  </div>
+
+  <h2>查找替换工具</h2>
+
+  <label for="inputText">原始文本（粘贴这里）：</label>
+  <textarea id="inputText" rows="24"></textarea>
+  <div style="text-align: center;"><button onclick="pasteText()">一键粘贴</button></div>
+
+  <label for="findText">查找内容（多个请用空格分隔）：</label>
+  <input type="text" id="findText">
+
+  <label for="replaceText">替换为（默认空格）：</label>
+  <input type="text" id="replaceText" value=" ">
+
+  <div style="margin: 10px 0; display: flex; justify-content: space-between; flex-wrap: wrap;">
+  <div style="flex: 1; text-align: center;">
+    <button onclick="replaceText()">替换</button>
+  </div>
+  <div style="flex: 1; text-align: center;">
+    <button onclick="quickReplace()">一键替换符号</button>
+  </div>
+  <div style="flex: 1; text-align: right;">
+    <button onclick="copyResult()">一键复制结果</button>
+  </div>
+</div>
+
+  <label for="outputText">替换结果：</label>
+  <textarea id="outputText" rows="24" readonly></textarea>
+
+  <div style="text-align: center; margin-top: 10px;"><button onclick="clearAll()">一键清空</button></div>
+
+  <script>
+    function replaceText() {
+      let input = document.getElementById('inputText').value;
+      const findList = document.getElementById('findText').value.split(' ').map(s => s.trim()).filter(Boolean);
+      const replace = document.getElementById('replaceText').value;
+
+      findList.forEach(find => {
+        input = input.split(find).join(replace);
+      });
+
+      document.getElementById('outputText').value = input;
+    }
+
+    
+    function quickReplace() {
+      let input = document.getElementById('inputText').value;
+
+      // 替换特定符号为“空格”
+      const symbols = ['+', '/', '-', '.', ','];
+      symbols.forEach(symbol => {
+        input = input.split(symbol).join(' ');
+      });
+
+      // 删除生肖之间的非汉字字符
+      const zodiac = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+      const zodiacRegex = new RegExp(`(${zodiac.join('|')})[^\u4e00-\u9fa5]*?(?=(${zodiac.join('|')}))`, 'g');
+      input = input.replace(zodiacRegex, (match, p1, p2) => p1);
+
+      // 删除生肖与“各”之间的符号
+      const zodiacToGeRegex = new RegExp(`(${zodiac.join('|')})[^\u4e00-\u9fa5]*?(?=各)`, 'g');
+      input = input.replace(zodiacToGeRegex, (match, p1) => p1);
+
+      document.getElementById('outputText').value = input;
+    }
+
+
+    function copyResult() {
+      const output = document.getElementById('outputText');
+      output.select();
+      document.execCommand('copy');
+      alert("已复制到剪贴板！");
+    }
+
+    function clearAll() {
+      document.getElementById('inputText').value = "";
+      document.getElementById('findText').value = "";
+      document.getElementById('replaceText').value = " ";
+      document.getElementById('outputText').value = "";
+    }
+
+    async function pasteText() {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('inputText').value = text;
+      } catch (err) {
+        alert("无法粘贴，浏览器可能不支持或未授权。");
+      }
+    }
+  </script>
+
+</body>
+</html>
